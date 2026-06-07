@@ -1,0 +1,148 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// User / Employee roles
+enum Role {
+  ADMIN
+  CASHIER
+  MANAGER
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String    // Hashed password
+  role      Role      @default(CASHIER)
+  sessions  RegisterSession[]
+  orders    Order[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Category for products
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Products in inventory
+model Product {
+  id                String      @id @default(uuid())
+  name              String
+  barcode           String?     @unique
+  price             Decimal     // Selling price
+  cost              Decimal     // Purchase cost (for COGS)
+  stock             Int         @default(0)
+  lowStockAlertLimit Int        @default(5)
+  
+  category          Category    @relation(fields: [categoryId], references: [id])
+  categoryId        String
+  
+  orderItems        OrderItem[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+// Cash register sessions (opening/closing cash drawer checks)
+enum SessionStatus {
+  OPEN
+  CLOSED
+}
+
+model RegisterSession {
+  id                     String        @id @default(uuid())
+  cashier                User          @relation(fields: [cashierId], references: [id])
+  cashierId              String
+  openedAt               DateTime      @default(now())
+  closedAt               DateTime?
+  openingBalance         Decimal
+  expectedClosingBalance Decimal       @default(0.00) // opening + cash sales
+  actualClosingBalance   Decimal?
+  difference             Decimal?      // actual - expected
+  status                 SessionStatus @default(OPEN)
+  
+  transactions           CashTransaction[]
+  orders                 Order[]
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+}
+
+// Order Status
+enum OrderStatus {
+  COMPLETED
+  HELD
+  CANCELLED
+}
+
+// Payment Methods
+enum PaymentMethod {
+  CASH
+  CARD
+  MOBILE
+}
+
+// Customer Orders / Sales
+model Order {
+  id             String          @id @default(uuid())
+  orderNumber    String          @unique // Readable receipt number (e.g. INV-2026-0001)
+  cashier        User            @relation(fields: [cashierId], references: [id])
+  cashierId      String
+  session        RegisterSession @relation(fields: [sessionId], references: [id])
+  sessionId      String
+  
+  subtotalAmount Decimal         // Sum of item price * quantity
+  taxAmount      Decimal         // Taxes calculated on subtotal
+  discountAmount Decimal         // Global cart discount applied
+  netAmount      Decimal         // Total paid by customer (subtotal + tax - discount)
+  totalCost      Decimal         // Total cost of items (for COGS calculation)
+  grossProfit    Decimal         // netAmount - totalCost (real-time gross margin)
+  
+  paymentMethod  PaymentMethod
+  status         OrderStatus     @default(COMPLETED)
+  
+  items          OrderItem[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+// Order Items (individual lines within receipt)
+model OrderItem {
+  id             String   @id @default(uuid())
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId        String
+  product        Product  @relation(fields: [productId], references: [id])
+  productId      String
+  
+  quantity       Int
+  unitPrice      Decimal  // Snapshotted price at transaction time
+  unitCost       Decimal  // Snapshotted cost at transaction time for exact historical profit
+  totalPrice     Decimal  // unitPrice * quantity
+  totalCost      Decimal  // unitCost * quantity
+  profitAmount   Decimal  // totalPrice - totalCost
+}
+
+// Cash Flow/Adjustments during sessions (Pay-ins, Pay-outs, Cash Drawer changes)
+enum CashFlowType {
+  PAY_IN
+  PAY_OUT
+}
+
+model CashTransaction {
+  id           String          @id @default(uuid())
+  session      RegisterSession @relation(fields: [sessionId], references: [id])
+  sessionId    String
+  type         CashFlowType
+  amount       Decimal
+  description  String
+  createdAt    DateTime        @default(now())
+}
