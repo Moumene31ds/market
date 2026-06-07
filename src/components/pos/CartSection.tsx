@@ -140,7 +140,7 @@ export default function CartSection({ onCheckout, onOpenHoldModal, onOpenSession
             className="flex items-center justify-center gap-1 py-1.5 bg-slate-800/60 hover:bg-slate-800 text-slate-300 text-xxs font-medium rounded-lg transition-colors"
             title="تعليق الفاتورة الحالية"
           >
-            <PausePresentation size={12} />
+            <Pause size={12} />
             تعليق الطلب
           </button>
           
