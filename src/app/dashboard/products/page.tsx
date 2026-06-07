@@ -275,7 +275,9 @@ export default function ProductsPage() {
                             {p.stock} قطعة
                           </span>
                           {isLow && (
-                            <AlertTriangle size={13} className="text-amber-500" title="مخزون منخفض!" />
+                            <span title="مخزون منخفض!" className="flex">
+                              <AlertTriangle size={13} className="text-amber-500" />
+                            </span>
                           )}
                         </div>
                       </td>
