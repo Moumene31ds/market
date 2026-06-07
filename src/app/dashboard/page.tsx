@@ -1,5 +1,5 @@
 import React from 'react';
-import { getDashboardStats, getLowStockProducts } from '@/lib/actions/sales';
+import { getDashboardStats } from '@/lib/actions/sales';
 import { getLowStockProducts as getLowStockAction } from '@/lib/actions/products';
 import StatsCards from '@/components/dashboard/StatsCards';
 import SalesChart from '@/components/dashboard/SalesChart';
