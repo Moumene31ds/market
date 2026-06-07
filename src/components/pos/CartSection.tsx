@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useCartStore } from '@/lib/store/useCartStore';
 import { formatCurrency } from '@/lib/utils';
-import { Plus, Minus, Trash2, Tag, Percent, PausePresentation, Play, ShoppingCart, Info } from 'lucide-react';
+import { Plus, Minus, Trash2, Tag, Percent, Pause, Play, ShoppingCart, Info } from 'lucide-react';
 
 interface CartSectionProps {
   onCheckout: () => void;
